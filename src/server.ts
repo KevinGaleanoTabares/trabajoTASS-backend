@@ -1,11 +1,13 @@
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
+import { app } from './app.js';
+import { env } from './config/env.js';
 
-dotenv.config();
-mongoose.connect(process.env.MONGO_URI!)
-    .then(() => {
-        console.log('connection succeeded');
-    })
-    .catch((error) => {
-        console.error('connection failed', error);
+export async function startServer(): Promise<void> {
+    await mongoose.connect(env.mongoUri);
+
+    console.log('Connection to MongoDB succeeded')
+
+    app.listen(env.port, () => {
+        console.log(`Server running on http://localhost:${env.port}`);
     });
+}

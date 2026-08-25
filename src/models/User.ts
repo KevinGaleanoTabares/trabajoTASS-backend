@@ -45,7 +45,7 @@ const userSchema = new Schema(
         rolSistema: {
             type: String,
             required: true,
-            enum: ['super_admin', 'admin', 'usuario'],
+            enum: ['usuario', 'admin', 'superAdmin'],
             default: 'usuario',
         },
         cargo: {

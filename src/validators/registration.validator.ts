@@ -1,6 +1,6 @@
 export const REGEX = {
   EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-  PASSWORD: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()]).{9,}$/,
+  PASSWORD: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[_!@#$%^&*()]).{9,}$/,
   NUMBERS_ONLY: /^\d+$/,
   ALPHANUMERIC: /^[a-zA-Z0-9]+$/,
   PHONE: /^\d{10,}$/,
@@ -101,6 +101,7 @@ export function validateRegistration(data: {
   correo: unknown;
   telefono: unknown;
   tipoVinculacion: unknown;
+  empresaProveedora: unknown;
   cargo: unknown;
   password: unknown;
   confirmPassword: unknown;

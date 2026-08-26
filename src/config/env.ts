@@ -5,27 +5,22 @@ import path from 'node:path';
 const nodeEnv = process.env.NODE_ENV ?? 'local';
 const envPath = path.resolve(process.cwd(), `.env.${nodeEnv}`);
 
-if (!fs.existsSync(envPath)) {
-    throw new Error(`No existe el archivo de entorno: ${envPath}`);
+if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath });
 }
-
-dotenv.config({
-    path: envPath,
-    override: true
-});
 
 
 const mongoUri = process.env.MONGO_URI;
 
 if (!mongoUri) {
-    throw new Error('Falta la variable MONGO_URI en el archivo de entorno');
+    throw new Error('Falta la variable MONGO_URI en el entorno');
 }
 
 
 const frontendUrl = process.env.FRONTEND_URL;
 
 if (!frontendUrl) {
-    throw new Error('Falta la variable FRONTEND_URL en el archivo de entorno.');
+    throw new Error('Falta la variable FRONTEND_URL en el entorno.');
 }
 
 const jwtSecret = process.env.JWT_SECRET;

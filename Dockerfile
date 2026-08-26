@@ -1,29 +1,24 @@
+FROM node:22-alpine AS build
 
-# syntax=docker/dockerfile:1
+WORKDIR /app
 
-ARG NODE_VERSION=22.23.2
-
-FROM node:${NODE_VERSION}-alpine
-
-ENV NODE_ENV=development
-
-WORKDIR /src/app
-
-# Copiar package files primero
 COPY package*.json ./
+RUN npm ci
 
-# Instalar dependencias
-RUN npm install
+COPY tsconfig.json ./
+COPY src ./src
+RUN npm run build
 
-# Copiar proyecto
-COPY . .
+FROM node:22-alpine
 
+WORKDIR /app
+ENV NODE_ENV=production
 
-# Exponer puerto
-EXPOSE 3200
+COPY package*.json ./
+RUN npm ci --omit=dev
 
-# Usuario no root
+COPY --from=build /app/dist ./dist
+
 USER node
-
-# Comando inicio
-CMD ["npm", "run", "dev"]
+EXPOSE 3000
+CMD ["node", "dist/server.js"]

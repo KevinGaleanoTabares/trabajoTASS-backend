@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Verifica tu cuenta</title>
+</head>
+<body style="
+    margin: 0;
+    padding: 0;
+    background-color: #f4f6f8;
+    font-family: Arial, Helvetica, sans-serif;
+">
+
+    <table
+        width="100%"
+        cellpadding="0"
+        cellspacing="0"
+        style="background-color: #f4f6f8; padding: 40px 0;"
+    >
+        <tr>
+            <td align="center">
+
+                <table
+                    width="600"
+                    cellpadding="0"
+                    cellspacing="0"
+                    style="
+                        max-width: 600px;
+                        width: 100%;
+                        background-color: #ffffff;
+                        border-radius: 10px;
+                        overflow: hidden;
+                    "
+                >
+
+                    <!-- Encabezado -->
+                    <tr>
+                        <td
+                            align="center"
+                            style="
+                                background-color: #000000;
+                                padding: 30px;
+                                color: #ffffff;
+                            "
+                        >
+                        <img src="cid:tass-logo" alt="TASS logo" style="width: 48px; height: 48px;">
+
+                            <h1 style="margin: 0;">
+                                Bienvenido a TASS
+                            </h1>
+                        </td>
+                    </tr>
+
+                    <!-- Contenido -->
+                    <tr>
+                        <td style="padding: 40px;">
+
+                            <h2 style="
+                                margin-top: 0;
+                                color: #1f2937;
+                            ">
+                                ¡Gracias por registrarte!
+                            </h2>
+
+                            <p style="
+                                color: #4b5563;
+                                font-size: 16px;
+                                line-height: 1.6;
+                            ">
+                                Para completar tu registro y activar tu
+                                cuenta, necesitamos verificar tu dirección
+                                de correo electrónico.
+                            </p>
+
+                            <p style="
+                                color: #4b5563;
+                                font-size: 16px;
+                                line-height: 1.6;
+                            ">
+                                Haz clic en el siguiente botón:
+                            </p>
+
+                            <!-- Botón -->
+                            <table
+                                cellpadding="0"
+                                cellspacing="0"
+                                width="100%"
+                            >
+                                <tr>
+                                    <td align="center" style="padding: 25px 0;">
+
+                                        <a
+                                            href="<%= verificationLink %>"
+                                            style="
+                                                display: inline-block;
+                                                padding: 14px 28px;
+                                                background-color: #000000;
+                                                color: #ffffff;
+                                                text-decoration: none;
+                                                border-radius: 6px;
+                                                font-size: 16px;
+                                                font-weight: bold;
+                                            "
+                                        >
+                                            Verificar correo
+                                        </a>
+
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="
+                                color: #6b7280;
+                                font-size: 14px;
+                                line-height: 1.5;
+                            ">
+                                Si el botón no funciona, puedes copiar y
+                                pegar el siguiente enlace en tu navegador:
+                            </p>
+
+                            <p style="
+                                word-break: break-all;
+                                color: #03112c;
+                                font-size: 13px;
+                            ">
+                                <%= verificationLink %>
+                            </p>
+
+                            <p style="
+                                margin-top: 30px;
+                                color: #6b7280;
+                                font-size: 14px;
+                                line-height: 1.5;
+                            ">
+                                Si no solicitaste esta cuenta, puedes
+                                ignorar este correo.
+                            </p>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            align="center"
+                            style="
+                                background-color: #f3f4f6;
+                                padding: 20px;
+                                color: #6b7280;
+                                font-size: 12px;
+                            "
+                        >
+                            © 2026 TASS. Todos los derechos reservados para Kevin Galeano - EL PRACTI.
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>

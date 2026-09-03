@@ -11,6 +11,7 @@ import { CompanyModel } from '../models/company.js';
 import { generateAuthToken, generateVerificationToken, verifyToken} from '../services/jwt.service.js';
 import { sendVerificationEmail } from '../services/email.service.js';
 import { env } from '../config/env.js';
+import { AuthorizedPersonModel } from '../models/AuthorizedPerson.js';
 
 export async function register(
   request: Request,
@@ -83,6 +84,38 @@ export async function register(
         );
       }
 
+    }
+
+      const authorizedPerson = await AuthorizedPersonModel.findOne({
+        tipoDocumento,
+        numeroDocumento: normalizedDocument,
+        estado: 'ACTIVO',
+      });
+
+      if (!authorizedPerson) {
+
+        console.log('El tipo de documento no corresponde a un rol autorizado');
+
+        throw new ValidationError(
+          'Los datos de autorización no son válidos.',
+          {
+            numeroDocumento: 'Los datos de autorización no son válidos.',
+          }
+        );
+        
+      }
+
+    const cargoAutorizado = String(authorizedPerson.cargo).trim().toLowerCase();
+    const cargoRegistrado = String(cargo).trim().toLowerCase();
+
+    if (cargoAutorizado !== cargoRegistrado) {
+      throw new ValidationError(
+        'Los datos de autorización no son válidos.',
+        {
+          numeroDocumento: 'Los datos de autorización no son válidos.',
+          cargo: 'Los datos de autorización no son válidos.',
+        }
+      );
     }
 
     const passwordHash = await bcrypt.hash(String(password), 10);
@@ -206,9 +239,10 @@ export async function login(request: Request, response: Response, next: NextFunc
     }
 
     if (user.estado !== 'ACTIVO') {
-      throw new ConflictError(
+      throw new ValidationError(
         'Debes activar tu cuenta para iniciar sesión',
-        'User',
+        undefined,
+        'ACCOUNT_NOT_ACTIVE'
       );
     }
 

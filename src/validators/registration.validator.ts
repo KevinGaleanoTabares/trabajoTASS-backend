@@ -1,3 +1,5 @@
+import { CARGOS_VALIDOS } from "../constants/cargos.js";
+
 export const REGEX = {
   EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   PASSWORD: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[_!@#$%^&*()]).{9,}$/,
@@ -93,6 +95,42 @@ export function validateConfirmPassword(password: string, confirmPassword: strin
   return { valid: true };
 }
 
+export function validateCargo(cargo: string): string | null {
+  if (!cargo) {
+    return 'El cargo es obligatorio.';
+  }
+
+  if (!CARGOS_VALIDOS.includes(cargo as typeof CARGOS_VALIDOS[number])) {
+    return 'Debes seleccionar un cargo válido.';
+  }
+
+  return null;
+}
+
+export function validateNumeroDocumento(
+  numeroDocumento: string,
+  tipoDocumento: string,
+): string | null {
+
+  if (!numeroDocumento) {
+    return 'El número de documento es obligatorio.';
+  }
+
+  if (tipoDocumento === 'PASAPORTE') {
+    if (!/^(?=.*[a-zA-Z])[a-zA-Z0-9]+$/.test(numeroDocumento)) {
+      return 'El pasaporte es inválido.';
+    }
+
+    return null;
+  }
+
+  if (!/^\d+$/.test(numeroDocumento)) {
+    return 'El número de documento solo puede contener números.';
+  }
+
+  return null;
+}
+
 export function validateRegistration(data: {
   nombres: unknown;
   apellidos: unknown;
@@ -102,7 +140,7 @@ export function validateRegistration(data: {
   telefono: unknown;
   tipoVinculacion: unknown;
   empresaProveedora: unknown;
-  cargo: unknown;
+  cargo: string;
   password: unknown;
   confirmPassword: unknown;
 }): { valid: boolean; errors: Record<string, string> } {
@@ -132,11 +170,30 @@ export function validateRegistration(data: {
   const cargoValidation = validateName(String(data.cargo ?? ''), 'Cargo');
   if (!cargoValidation.valid) errors.cargo = cargoValidation.error || '';
 
+  const cargoError = validateCargo(data.cargo);
+  if (cargoError) {
+    errors.cargo = cargoError;
+  }
+
+  const validarTipoDoc = validateNumeroDocumento(String(data.numeroDocumento ?? ''), String(data.tipoDocumento ?? ''));
+  if (validarTipoDoc) {
+    errors.numeroDocumento = validarTipoDoc;
+  }
+
   const passwordValidation = validatePassword(String(data.password ?? ''));
   if (!passwordValidation.valid) errors.password = passwordValidation.error || '';
 
   const confirmPasswordValidation = validateConfirmPassword(String(data.password ?? ''), String(data.confirmPassword ?? ''));
   if (!confirmPasswordValidation.valid) errors.confirmPassword = confirmPasswordValidation.error || '';
+
+  console.log("Nombres:", data.nombres)
+  console.log("Apellidos:", data.apellidos)
+  console.log("tipo de Documento:", data.tipoDocumento)
+  console.log("numeroDocumento:", data.numeroDocumento)
+  console.log("correo:", data.correo)
+  console.log("telefono:", data.telefono)
+  console.log("tipoVinculacion:", data.tipoVinculacion)
+  console.log("empresaProveedora:", data.empresaProveedora)
 
   return {
     valid: Object.keys(errors).length === 0,

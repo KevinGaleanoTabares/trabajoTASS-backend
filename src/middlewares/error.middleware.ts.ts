@@ -35,9 +35,9 @@ export const errorHandler: ErrorRequestHandler = (error, request, response, _nex
     message: appError.message,
     code: appError.code,
     // En producción, no incluir detalles internos
-    ...(process.env.NODE_ENV !== 'production' && {
+    // ...(process.env.NODE_ENV !== 'production' && {
       details: appError.details,
-    }),
+    // }),
   });
 };
 

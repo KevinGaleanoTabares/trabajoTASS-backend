@@ -9,7 +9,9 @@
     "dev": "cross-env NODE_ENV=dev tsx watch src/server.ts",
     "start:staging": "cross-env NODE_ENV=staging node dist/server.js",
     "start:prod": "cross-env NODE_ENV=production node dist/server.js",
-    "build": "tsc"
+    "build": "tsc && npm run copy-templates && npm run copy-assets",
+    "copy-templates": "cpy \"src/templates/**/*.ejs\" dist/templates --parents",
+    "copy-assets": "cpy \"src/assets/**/*\" dist/assets --parents"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +22,7 @@
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
+    "ejs": "^6.0.1",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.9.2",
@@ -29,10 +32,12 @@
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
+    "@types/ejs": "^3.1.5",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.2.0",
     "@types/nodemailer": "^8.0.1",
+    "cpy-cli": "^7.0.0",
     "cross-env": "^10.1.0",
     "ts-node-dev": "^2.0.0",
     "tsx": "^4.23.12",

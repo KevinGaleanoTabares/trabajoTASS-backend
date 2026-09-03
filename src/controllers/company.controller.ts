@@ -4,6 +4,7 @@ import { findCompanyByNit } from '../services/company.service.js';
 export const getCompanyByNit = async (req: Request, res: Response): Promise<void> => {
     
   const { nit } = req.params;
+  console.log('NIT recibido:', nit);
 
   if (typeof nit !== 'string') {
     res.status(400).json({

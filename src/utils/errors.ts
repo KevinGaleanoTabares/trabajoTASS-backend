@@ -22,8 +22,9 @@ export class ValidationError extends AppError {
   constructor(
     message: string,
     public readonly fieldErrors?: Record<string, string>,
+    code = 'VALIDATION_ERROR',
   ) {
-    super(message, 400, 'VALIDATION_ERROR', { fieldErrors });
+    super(message, 400, code, { fieldErrors });
     Object.setPrototypeOf(this, ValidationError.prototype);
   }
 }

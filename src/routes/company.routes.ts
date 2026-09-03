@@ -10,5 +10,5 @@ const asyncHandler = (
 
 export const companyRouter = Router();
 
-companyRouter.post('/', asyncHandler(createCompany));
 companyRouter.get('/nit/:nit', asyncHandler(getCompanyByNit));
+companyRouter.post('/', asyncHandler(createCompany));

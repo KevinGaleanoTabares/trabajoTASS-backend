@@ -246,10 +246,7 @@ export async function login(request: Request, response: Response, next: NextFunc
       );
     }
 
-    const token = generateAuthToken(
-      user._id.toString(),
-      user.rolSistema,
-    );
+    const token = generateAuthToken(user);
 
     response.status(200).json({
       success: true,
@@ -259,7 +256,14 @@ export async function login(request: Request, response: Response, next: NextFunc
         user: {
           id: user._id,
           nombres: user.nombres,
+          apellidos: user.apellidos,
           correo: user.correo,
+          tipoDocumento: user.tipoDocumento,
+          numeroDocumento: user.numeroDocumento,
+          telefono: user.telefono,
+          tipoVinculacion: user.tipoVinculacion,
+          rolSistema: user.rolSistema,
+          cargo: user.cargo,
           estado: user.estado,
         },
       },

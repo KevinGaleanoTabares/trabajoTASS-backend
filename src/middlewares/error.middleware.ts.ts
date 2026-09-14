@@ -93,3 +93,8 @@ function logError(error: AppError, request: any): void {
     }
   );
 }
+
+/**
+ * Control de permisos de usuario
+ */
+

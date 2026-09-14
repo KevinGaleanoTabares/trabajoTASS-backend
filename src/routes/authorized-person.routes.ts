@@ -1,7 +1,5 @@
 import { Router } from 'express';
-import {
-    createAuthorizedPerson,
-} from '../controllers/authorized-person.controller.js';
+import { createAuthorizedPerson } from '../controllers/authorized-person.controller.js';
 
 const router = Router();
 

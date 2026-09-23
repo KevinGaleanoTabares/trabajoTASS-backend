@@ -1,6 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
 import type { IConflict } from '../utils/enums_types_interfaces.js';
-
+import { runInContext } from 'node:vm';
 
 const conflictSchema = new Schema<IConflict>(
   {
@@ -36,6 +36,18 @@ const conflictSchema = new Schema<IConflict>(
       required: true,
     },
 
+    usuarioDeclarante: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+
+    categoria: {
+      type: String,
+      enum: [ 'EMPLEADO', 'ADMINISTRATIVO', 'DIRECTIVO', 'PROVEEDOR' ],
+      required: true,
+    },
+
     fechaResolucion: {
       type: Date,
       default: null,
@@ -68,14 +80,45 @@ const conflictSchema = new Schema<IConflict>(
           required: true,
         },
 
-        area: String,
+        tipoVinculacion: {
+          type: String,
+          required: true
+        },
 
-        empresa: String,
+        correo: {
+          type: String,
+          required: true,
+        },
 
-        nit: String,
+        telefono: {
+          type: String,
+          required: true
+        },
+
+        area: {
+          type: String,
+          default: null
+        },
+
+        empresa: {
+          type: String,
+          default: null,
+        },
+
+        nit: {
+          type: String,
+          default: null,
+        },
       },
     ],
 
+    coincidencias: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+    
     descripcion: {
       type: String,
       required: true,

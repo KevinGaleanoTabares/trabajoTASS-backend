@@ -1,15 +1,24 @@
 import { Router } from 'express';
-import { getConflictsController, getConflictByIdController, detectConflictsController, getDashboardStatsController } from '../controllers/conflict.controller.js';
+import { 
+    getConflictsController, 
+    getConflictByIdController, 
+    detectConflictsController, 
+    getDashboardStatsController,
+} from '../controllers/conflict.controller.js';
+
+import { authMiddleware } from '../middlewares/auth.middleware.js';
+import { authorizeRoles } from '../middlewares/role.middleware.js';
+
 
 const router = Router();
 
+router.get('/', authMiddleware, authorizeRoles('admin', 'super_admin'), getConflictsController);
 
-router.get('/', getConflictsController);
+router.get('/dashboard-stats', authMiddleware, authorizeRoles('admin', 'super_admin'), getDashboardStatsController);
 
-router.get('/dashboard-stats', getDashboardStatsController);
+router.get('/:id', authMiddleware, authorizeRoles('admin', 'super_admin'), getConflictByIdController);
 
-router.get('/:id', getConflictByIdController);
-
-router.post('/detect', detectConflictsController);
+router.post('/detect', authMiddleware, authorizeRoles('admin', 'super_admin'), detectConflictsController);
 
 export default router;
+

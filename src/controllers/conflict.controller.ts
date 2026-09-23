@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { getConflicts, getConflictById, detectLevelOneConflicts, getDashboardStats } from '../services/conflict.service.js'
 import mongoose from 'mongoose';
 
+// Obtener los conflictos
 export async function getConflictsController(req: Request, res: Response) {
     const conflicts = await getConflicts();
 
@@ -11,10 +12,12 @@ export async function getConflictsController(req: Request, res: Response) {
     });
 }
 
+// Obtener un conflicto en especifico por su id
 export async function getConflictByIdController(req: Request, res: Response) {
 
     const { id } = req.params;
 
+    // Validar que el id tenga un formato válido de MongoDB
     if (typeof id !== 'string' || !mongoose.isValidObjectId(id)) {
         return res.status(400).json({
             success: false,
@@ -24,6 +27,7 @@ export async function getConflictByIdController(req: Request, res: Response) {
     
     const conflict = await getConflictById(id);
 
+    // Si no existe un conflicto con ese id
     if (!conflict) {
         return res.status(404).json({
             success: false,
@@ -38,6 +42,7 @@ export async function getConflictByIdController(req: Request, res: Response) {
 
 }
 
+// Detectar conflictos
 export async function detectConflictsController(req: Request, res: Response) {
     const conflicts = await detectLevelOneConflicts();
 
@@ -48,6 +53,7 @@ export async function detectConflictsController(req: Request, res: Response) {
     });
 }
 
+// Obtener estadísticas del dashboard
 export async function getDashboardStatsController( req: Request, res: Response) {
 
     const stats = await getDashboardStats();

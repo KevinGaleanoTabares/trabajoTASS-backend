@@ -1,5 +1,12 @@
 import mongoose, { Document } from 'mongoose';
 
+export interface IConflictAuditLog {
+  accion: string;
+  usuario: mongoose.Types.ObjectId;
+  fecha: Date;
+  detalles: string;
+}
+
 export type ConflictLevel = 'BAJO' | 'MEDIO' | 'ALTO';
 
 export type ConflictStatus =
@@ -10,15 +17,18 @@ export type ConflictStatus =
   | 'ESCALADO';
 
 export interface IConflictInvolved {
-  userId?: mongoose.Types.ObjectId;
+  userId: mongoose.Types.ObjectId;
   nombre: string;
   documento: string;
   tipo: string;
   rol: string;
-  area?: string;
-  empresa?: string;
-  nit?: string;
-}
+  tipoVinculacion: string;
+  correo: string;
+  telefono: string;
+  area?: string | null;
+  empresa?: string | null;
+  nit?: string | null;
+};
 
 export interface IConflictEvidence {
   tipo: 'documento' | 'imagen';
@@ -34,23 +44,19 @@ export interface IConflictNote {
   usuario: mongoose.Types.ObjectId;
   tipo: 'observacion' | 'resolucion' | 'escalamiento';
 }
-
-export interface IConflictAuditLog {
-  accion: string;
-  usuario: mongoose.Types.ObjectId;
-  fecha: Date;
-  detalles: string;
-}
-
 export interface IConflict extends Document {
   codigo: string;
   nivel: ConflictLevel;
   estado: ConflictStatus;
 
   fechaDeteccion: Date;
-  fechaResolucion?: Date | null;
+  usuarioDeclarante: mongoose.Types.ObjectId;
+  categoria: | 'EMPLEADO' | 'ADMINISTRATIVO' | 'DIRECTIVO' | 'PROVEEDOR';
 
+  fechaResolucion?: Date | null;
   involucrados: IConflictInvolved[];
+
+  coincidencias: string[];
 
   descripcion: string;
 
@@ -111,4 +117,32 @@ export type TipoVinculo =
   | 'Pareja'
   | 'Tio'
   | 'Tia';
+
+export interface IfamilyRelationship {
+    usuario: mongoose.Types.ObjectId;
+    familiar: mongoose.Types.ObjectId;
+    parentesco: string;
+    fechaDeclaracion: Date;
+    fechaConflicto?: Date | null;
+}
+
+export type ActiveUser = {
+  _id: unknown;
+  nombres: string;
+  apellidos: string;
+  tipoDocumento: string;
+  numeroDocumento: string;
+  correo: string;
+  telefono: string;
+  tipoVinculacion: string;
+  rolSistema: string;
+  cargo: string;
+  estado: string;
+  empresaProveedora?: {
+    _id: unknown;
+    nit: string;
+    nombre: string;
+    estado: string;
+  } | null;
+};
 

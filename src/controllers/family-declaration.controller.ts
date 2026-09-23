@@ -1,7 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { createFamilyDeclaration } from '../services/family-declaration.service.js';
 import { ValidationError } from '../utils/errors.js';
-import { FamilyDeclarationModel } from '../models/FamilyDeclaration.js';
 
 export async function createFamilyDeclarationController(
     request: Request,
@@ -41,6 +40,7 @@ export async function createFamilyDeclarationController(
             message: 'Familiar registrado correctamente.',
             data: declaracion,
         });
+        console.log('FAMILIAR CREADO', declaracion )
 
     } catch (error) {
         next(error);

@@ -1,6 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
 import type { IConflict } from '../utils/enums_types_interfaces.js';
-import { runInContext } from 'node:vm';
 
 const conflictSchema = new Schema<IConflict>(
   {

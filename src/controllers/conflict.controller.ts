@@ -27,14 +27,6 @@ export async function getConflictByIdController(req: Request, res: Response) {
     
     const conflict = await getConflictById(id);
 
-    // Si no existe un conflicto con ese id
-    if (!conflict) {
-        return res.status(404).json({
-            success: false,
-            message: 'Conflicto no encontrado',
-        });
-    }
-
     return res.status(200).json({
         success: true,
         data: conflict,
@@ -44,6 +36,7 @@ export async function getConflictByIdController(req: Request, res: Response) {
 
 // Detectar conflictos
 export async function detectConflictsController(req: Request, res: Response) {
+    
     const conflicts = await detectLevelOneConflicts();
 
     return res.status(200).json({

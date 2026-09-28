@@ -44,6 +44,7 @@ export interface IConflictNote {
   usuario: mongoose.Types.ObjectId;
   tipo: 'observacion' | 'resolucion' | 'escalamiento';
 }
+
 export interface IConflict extends Document {
   codigo: string;
   nivel: ConflictLevel;

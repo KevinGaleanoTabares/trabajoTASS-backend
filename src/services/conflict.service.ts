@@ -1,23 +1,84 @@
 import { ConflictModel } from '../models/Conflict.js';
+import { ConflictError, NotFoundError } from '../utils/errors.js';
 import { UserModel } from '../models/User.js';
 import { familyRelationshipModel } from '../models/FamilyRelationship.js';
 import type { ActiveUser, ConflictLevel } from '../utils/enums_types_interfaces.js';
 import mongoose from 'mongoose';
-
+import { isDuplicateKeyError } from '../middlewares/error.middleware.ts.js'
 
 export async function getConflicts() {
 
-console.log('FAMILY CONFLICTS GOTTEN', (await ConflictModel.find().sort({ fechaDeteccion: -1 }).lean()));
-return  await ConflictModel.find().sort({ fechaDeteccion: -1 }).lean();
-}
+  try {
 
+    const conflicts = await ConflictModel.find().sort({ fechaDeteccion: -1 }).lean();
+
+    console.log('FAMILY CONFLICTS GOTTEN', conflicts);
+
+    return conflicts;
+
+  } catch (error: unknown) {
+
+    console.error('Error obteniendo conflictos:', error);
+
+    throw error;
+  }
+}
 
 export async function getConflictById(id: string) {
-  return await ConflictModel.findById(id).lean();
+
+  try {
+
+    const conflict = await ConflictModel.findById(id).lean();
+
+    if (!conflict) {
+      throw new NotFoundError('Conflicto');
+    }
+
+    return conflict;
+
+  } catch (error: unknown) {
+
+    console.error('Error obteniendo conflicto: ', error);
+
+    throw error;
+  }
+
 }
 
+async function getLastConflictCode(): Promise<string | null>  {
 
-async function generateConflictCode(number: number): Promise<string> {
+  const year = new Date().getFullYear();
+  
+  const lastConflict = await ConflictModel.findOne({codigo: new RegExp(`^CON-${year}-`)}).sort({ codigo: -1 }).select('codigo').lean();
+
+  return lastConflict?.codigo ?? null;
+
+}
+
+function getNextConflictNumber(lastCode: string | null): number {
+
+  if (!lastCode) {
+    return 1;
+  }
+
+  const numberPart = lastCode.split('-').pop();
+  const lastNumber = Number(numberPart);
+
+  if (Number.isNaN(lastNumber)) {
+
+    throw new Error(
+
+      `El código de conflicto "${lastCode}" tiene un formato inválido.`
+
+    );
+
+  }
+
+  return lastNumber + 1;
+
+}
+
+function generateConflictCode(number: number): string {
 
   const year = new Date().getFullYear();
   const formattedNumber = String(number).padStart(6, '0');
@@ -67,315 +128,349 @@ function determineConflictCategory(tipoVinculacion: string): 'EMPLEADO' | 'ADMIN
 
 async function conflictAlreadyExists(usuarioDeclaranteId: string, FamiliarId: string): Promise<boolean> {
 
-  const usuarioObjectId = new mongoose.Types.ObjectId(usuarioDeclaranteId);
-  const familiarObjectId = new mongoose.Types.ObjectId(FamiliarId);
-  const existingConflict = await ConflictModel.findOne({
+  try {
+    const usuarioObjectId = new mongoose.Types.ObjectId(usuarioDeclaranteId);
+    const familiarObjectId = new mongoose.Types.ObjectId(FamiliarId);
+    const existingConflict = await ConflictModel.findOne({
 
-    usuarioDeclarante: usuarioObjectId,
+      usuarioDeclarante: usuarioObjectId,
 
-    involucrados: {
-      $elemMatch: {
-        userId: familiarObjectId,
+      involucrados: {
+        $elemMatch: {
+          userId: familiarObjectId,
+        },
       },
-    },
 
-  }).lean();
+    }).lean();
 
-  return Boolean(existingConflict);
+    return Boolean(existingConflict);
+
+  } catch (error: unknown) {
+
+    console.error('Error verificando si el conflicto ya existe: ', error);
+
+    throw error;
+  }
+
 }
 
 
 // Detecta conflictos relacionados con relaciones familiares
 export async function detectLevelOneConflicts() {
-
-  // 1. Obtener únicamente usuarios activos
-  const activeUsers = await UserModel.find({
-    estado: 'ACTIVO',
-  }).populate(
-    'empresaProveedora',
-    'nit',
-  ).lean();
-
-
-  // 2. Crear un mapa para buscar usuarios rápidamente por su ID            ///////////////////////////////////////
-  const usersMap = new Map<string, ActiveUser>();
-
-  for (const user of activeUsers) {
-
-    usersMap.set(
-      String(user._id),
-      user as ActiveUser,
-    );
-
-  }
-
-  // 3. Obtener las relaciones familiares
-
-  const familyRelationships = await familyRelationshipModel.find().lean();
-
-  // 4. Guardar los conflictos detectados
-  const detectedConflicts = [];
+  try {
+    // 1. Obtener únicamente usuarios activos
+    const activeUsers = await UserModel.find({
+      estado: 'ACTIVO',
+    }).populate(
+      'empresaProveedora',
+      'nit',
+    ).lean();
 
 
-  // 5. Evitar comparar dos veces la misma pareja
+    // 2. Crear un mapa para buscar usuarios rápidamente por su ID            ///////////////////////////////////////
+    const usersMap = new Map<string, ActiveUser>();
 
-   const processedPairs = new Set<string>();
+    for (const user of activeUsers) {
 
-  // 6. Obtener el número inicial para generar códigos
-  const totalConflicts = await ConflictModel.countDocuments();
+      usersMap.set(
+        String(user._id),
+        user as ActiveUser,
+      );
 
-  let nextConflictNumber = totalConflicts + 1;
-
-
-  // 7. Recorrer todas las relaciones familiares
-  for (const relationship of familyRelationships) {
-
-    const usuarioId = String(relationship.usuario);
-    const familiarId = String(relationship.familiar);
-
-
-    // 8. Evitar que un usuario sea relacionado consigo mismo
-    if (usuarioId === familiarId) {
-      continue;
     }
 
+    // 3. Obtener las relaciones familiares
 
-    // 9. Ordenar los IDs para crear una pareja única
+    const familyRelationships = await familyRelationshipModel.find().lean();
 
-    const pairKey = `${usuarioId}:${familiarId}`;
+    // 4. Guardar los conflictos detectados
+    const detectedConflicts = [];
 
-    if (processedPairs.has(pairKey)) {
-      continue;
-    }
+    // 5. Evitar comparar dos veces la misma pareja
 
-    processedPairs.add(pairKey);
+    const processedPairs = new Set<string>();
 
-    // 10. Evitar relaciones duplicadas
+    // 6. Obtener el número inicial para generar códigos
+    const lastConflictCode = await getLastConflictCode();
 
-
-    // 11. Buscar ambos usuarios en el mapa
-    const usuario = usersMap.get(usuarioId);
-    const familiar = usersMap.get(familiarId);
+    let nextConflictNumber = getNextConflictNumber(lastConflictCode);
 
 
-    // 12. Si alguno no existe o no está activo, ignorar la relación
-    if (!usuario || !familiar) {
-      continue;
-    }
+    // 7. Recorrer todas las relaciones familiares
+    for (const relationship of familyRelationships) {
+
+      const usuarioId = String(relationship.usuario);
+      const familiarId = String(relationship.familiar);
 
 
-    // 13. Determinar el nivel del posible conflicto
-    const nivel = determineConflictLevel(
-      usuario.tipoVinculacion,
-      familiar.tipoVinculacion,
-    );
+      // 8. Evitar que un usuario sea relacionado consigo mismo
+      if (usuarioId === familiarId) {
+        continue;
+      }
 
 
-    // 14. Verificar si ya existe un conflicto para esa pareja
-    const alreadyExists = await conflictAlreadyExists(
-      usuarioId,
-      familiarId,
-    );
+      // 9. Ordenar los IDs para crear una pareja única
+
+      const pairKey = `${usuarioId}:${familiarId}`;
+
+      if (processedPairs.has(pairKey)) {
+        continue;
+      }
+
+      processedPairs.add(pairKey);
+
+      // 10. Evitar relaciones duplicadas
 
 
-    if (alreadyExists) {
-      continue;
-    }
+      // 11. Buscar ambos usuarios en el mapa
+      const usuario = usersMap.get(usuarioId);
+      const familiar = usersMap.get(familiarId);
 
 
-    // 15. Generar un código único dentro de esta ejecución
-    const codigo = await generateConflictCode(
-      nextConflictNumber,
-    );
+      // 12. Si alguno no existe o no está activo, ignorar la relación
+      if (!usuario || !familiar) {
+        continue;
+      }
 
-    nextConflictNumber++;
 
-    const categoria = determineConflictCategory(
-      usuario.tipoVinculacion,
-    );
+      // 13. Determinar el nivel del posible conflicto
+      const nivel = determineConflictLevel(
+        usuario.tipoVinculacion,
+        familiar.tipoVinculacion,
+      );
 
-    const nitUsuario = usuario.tipoVinculacion === 'proveedor' ? usuario.empresaProveedora?.nit ?? null : null;
 
-    const nitFamiliar = familiar.tipoVinculacion === 'proveedor' ? familiar.empresaProveedora?.nit ?? null : null;
+      // 14. Verificar si ya existe un conflicto para esa pareja
+      const alreadyExists = await conflictAlreadyExists(
+        usuarioId,
+        familiarId,
+      );
 
-    // 16. Construir el conflicto
-    const conflict = {
 
-      codigo,
+      if (alreadyExists) {
+        continue;
+      }
 
-      usuarioDeclarante: usuario._id,
 
-      categoria,
+      // 15. Generar un código único dentro de esta ejecución
+      const codigo = generateConflictCode(
+        nextConflictNumber,
+      );
 
-      nivel,
+      nextConflictNumber++;
 
-      estado: 'PENDIENTE',
+      const categoria = determineConflictCategory(
+        usuario.tipoVinculacion,
+      );
 
-      fechaDeteccion: new Date(),
+      const nitUsuario = usuario.tipoVinculacion === 'proveedor' ? usuario.empresaProveedora?.nit ?? null : null;
 
-      involucrados: [
+      const nitFamiliar = familiar.tipoVinculacion === 'proveedor' ? familiar.empresaProveedora?.nit ?? null : null;
 
-        {
-          userId: usuario._id,
-          nombre: `${usuario.nombres} ${usuario.apellidos}`,
-          tipo: usuario.tipoDocumento,
-          documento: usuario.numeroDocumento,
-          rol: usuario.rolSistema,
-          tipoVinculacion: usuario.tipoVinculacion,
-          correo: usuario.correo,
-          telefono: usuario.telefono,
-          area: null,
-          empresa: null,
-          nit: nitUsuario,
-        },
+      // 16. Construir el conflicto
+      const conflict = {
 
-        {
-          userId: familiar._id,
-          nombre: `${familiar.nombres} ${familiar.apellidos}`,
-          tipo: familiar.tipoDocumento,
-          documento: familiar.numeroDocumento,
-          rol: familiar.rolSistema,
-          tipoVinculacion: familiar.tipoVinculacion,
-          correo: familiar.correo,
-          telefono: familiar.telefono,
-          area: null,
-          empresa: null,
-          nit: nitFamiliar,
-        },
+        codigo,
 
-      ],
+        usuarioDeclarante: usuario._id,
 
-      coincidencias: [
-        'RELACION FAMILIAR',
-      ],
+        categoria,
 
-      descripcion:
-        `Se detectó una relación familiar entre ` +
-        `${usuario.nombres} ${usuario.apellidos} y ` +
-        `${familiar.nombres} ${familiar.apellidos}. ` +
-        `Parentesco registrado: ${relationship.parentesco}. ` +
-        `Se requiere revisión administrativa.`,
+        nivel,
 
-      evidencias: [],
+        estado: 'PENDIENTE',
 
-      notas: [],
+        fechaDeteccion: new Date(),
 
-      auditLog: [],
-    
-    };
+        involucrados: [
+
+          {
+            userId: usuario._id,
+            nombre: `${usuario.nombres} ${usuario.apellidos}`,
+            tipo: usuario.tipoDocumento,
+            documento: usuario.numeroDocumento,
+            rol: usuario.rolSistema,
+            tipoVinculacion: usuario.tipoVinculacion,
+            correo: usuario.correo,
+            telefono: usuario.telefono,
+            area: null,
+            empresa: null,
+            nit: nitUsuario,
+          },
+
+          {
+            userId: familiar._id,
+            nombre: `${familiar.nombres} ${familiar.apellidos}`,
+            tipo: familiar.tipoDocumento,
+            documento: familiar.numeroDocumento,
+            rol: familiar.rolSistema,
+            tipoVinculacion: familiar.tipoVinculacion,
+            correo: familiar.correo,
+            telefono: familiar.telefono,
+            area: null,
+            empresa: null,
+            nit: nitFamiliar,
+          },
+
+        ],
+
+        coincidencias: [
+          'RELACION FAMILIAR',
+        ],
+
+        descripcion:
+          `Se detectó una relación familiar entre ` +
+          `${usuario.nombres} ${usuario.apellidos} y ` +
+          `${familiar.nombres} ${familiar.apellidos}. ` +
+          `Parentesco registrado: ${relationship.parentesco}. ` +
+          `Se requiere revisión administrativa.`,
+
+        evidencias: [],
+
+        notas: [],
+
+        auditLog: [],
+
+      };
       console.log('RESULTADO', conflict)
 
 
-    // 17. Agregar el conflicto al arreglo
-    detectedConflicts.push(conflict);
+      // 17. Agregar el conflicto al arreglo
+      detectedConflicts.push(conflict);
 
+    }
+
+
+    // 18. Si no se detectaron conflictos, retornar arreglo vacío
+    if (detectedConflicts.length === 0) {
+      return [];
+    }
+
+
+    // 19. Guardar todos los conflictos en MongoDB
+    const savedConflicts = await ConflictModel.insertMany(
+      detectedConflicts,
+    );
+
+
+    // 20. Retornar los conflictos guardados
+    return savedConflicts;
+
+  } catch (error: unknown) {
+    console.error('Error detectando conflictos:', error);
+
+    if (isDuplicateKeyError(error)) {
+      throw new ConflictError(
+        'Uno de los conflictos detectados ya existe.',
+        'Conflict'
+      );
+    }
+
+    throw error;
   }
-
-
-  // 18. Si no se detectaron conflictos, retornar arreglo vacío
-  if (detectedConflicts.length === 0) {
-    return [];
-  }
-
-
-  // 19. Guardar todos los conflictos en MongoDB
-  const savedConflicts = await ConflictModel.insertMany(
-    detectedConflicts,
-  );
-
-
-  // 20. Retornar los conflictos guardados
-  return savedConflicts;
 
 }
 
 
 export async function getDashboardStats() {
 
-  const [
-    totalUsuarios,
-    totalConflictos,
-    conflictosAltoRiesgo,
-    conflictosPendientes,
-    conflictosResueltos,
-  ] = await Promise.all([
+  try {
 
-    UserModel.countDocuments({
-      estado: 'ACTIVO',
-    }),
+    const [
+      totalUsuarios,
+      totalConflictos,
+      conflictosAltoRiesgo,
+      conflictosPendientes,
+      conflictosResueltos,
+    ] = await Promise.all([
 
-    ConflictModel.countDocuments(),
+      UserModel.countDocuments({
+        estado: 'ACTIVO',
+      }),
 
-    ConflictModel.countDocuments({
-      nivel: 'ALTO',
-    }),
+      ConflictModel.countDocuments(),
 
-    ConflictModel.countDocuments({
-      estado: 'PENDIENTE',
-    }),
+      ConflictModel.countDocuments({
+        nivel: 'ALTO',
+      }),
 
-    ConflictModel.countDocuments({
-      estado: 'RESUELTO',
-    }),
+      ConflictModel.countDocuments({
+        estado: 'PENDIENTE',
+      }),
 
-  ]);
+      ConflictModel.countDocuments({
+        estado: 'RESUELTO',
+      }),
 
-
-  const tasaResolucion = totalConflictos > 0 ? (conflictosResueltos / totalConflictos) * 100 : 0;
-
-
-  const conflictosConResolucion = await ConflictModel
-    .find({
-      estado: 'RESUELTO',
-      fechaResolucion: {
-        $ne: null,
-      },
-    })
-    .select('fechaDeteccion fechaResolucion')
-    .lean();
+    ]);
 
 
-  let tiempoPromedioResolucion = 0;
 
 
-  if (conflictosConResolucion.length > 0) {
 
-    const tiempos = conflictosConResolucion.map(
-      conflicto => {
-
-        const diferencia =
-          new Date(conflicto.fechaResolucion!).getTime() -
-          new Date(conflicto.fechaDeteccion).getTime();
+    const tasaResolucion = totalConflictos > 0 ? (conflictosResueltos / totalConflictos) * 100 : 0;
 
 
-        return diferencia / (1000 * 60 * 60 * 24);
+    const conflictosConResolucion = await ConflictModel
+      .find({
+        estado: 'RESUELTO',
+        fechaResolucion: {
+          $ne: null,
+        },
+      })
+      .select('fechaDeteccion fechaResolucion')
+      .lean();
 
-      },
-    );
+
+    let tiempoPromedioResolucion = 0;
 
 
-    tiempoPromedioResolucion =
-      tiempos.reduce(
-        (total, tiempo) => total + tiempo, 0) / tiempos.length;
+    if (conflictosConResolucion.length > 0) {
+
+      const tiempos = conflictosConResolucion.map(
+        conflicto => {
+
+          const diferencia =
+            new Date(conflicto.fechaResolucion!).getTime() -
+            new Date(conflicto.fechaDeteccion).getTime();
+
+
+          return diferencia / (1000 * 60 * 60 * 24);
+
+        },
+      );
+
+
+      tiempoPromedioResolucion =
+        tiempos.reduce(
+          (total, tiempo) => total + tiempo, 0) / tiempos.length;
+
+    }
+
+
+    return {
+
+      totalUsuarios,
+      totalConflictos,
+      conflictosAltoRiesgo,
+      conflictosPendientes,
+
+      tasaResolucion: Number(
+        tasaResolucion.toFixed(2),
+      ),
+
+      tiempoPromedioResolucion: Number(
+        tiempoPromedioResolucion.toFixed(2),
+      ),
+
+    };
+
+  } catch (error: unknown) {
+
+    console.error('Error obteniendo estadísticas del dashboard: ', error);
+    
+    throw error;
 
   }
-
-
-  return {
-
-    totalUsuarios,
-    totalConflictos,
-    conflictosAltoRiesgo,
-    conflictosPendientes,
-
-    tasaResolucion: Number(
-      tasaResolucion.toFixed(2),
-    ),
-
-    tiempoPromedioResolucion: Number(
-      tiempoPromedioResolucion.toFixed(2),
-    ),
-
-  };
 
 }

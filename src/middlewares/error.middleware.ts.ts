@@ -9,6 +9,7 @@
 
 import type { ErrorRequestHandler } from 'express';
 import { AppError, isAppError } from '../utils/errors.js';
+import mongoose from 'mongoose';
 
 /**
  * Middleware global de manejo de errores
@@ -36,7 +37,7 @@ export const errorHandler: ErrorRequestHandler = (error, request, response, _nex
     code: appError.code,
     // En producción, no incluir detalles internos
     // ...(process.env.NODE_ENV !== 'production' && {
-      details: appError.details,
+    details: appError.details,
     // }),
   });
 };
@@ -45,10 +46,52 @@ export const errorHandler: ErrorRequestHandler = (error, request, response, _nex
  * Maneja errores desconocidos convirtiéndolos a AppError
  */
 function handleUnknownError(error: unknown): AppError {
+
+  // Error duplicado de MongoDB
+
+  if (error instanceof Error && 'code' in error && error.code === 11000) {
+
+    return new AppError(
+      'Ya existe un registro con los datos proporcionados.',
+      409,
+      'DUPLICATE_KEY'
+    );
+  }
+
+  //Error de ObjectId inválido
+
+  if (error instanceof mongoose.Error.CastError) {
+
+    return new AppError(
+      'El identificador proporcionado no es válido.',
+      400,
+      'INVALID_ID'
+    );
+  }
+
+  // Error de validación de Mongoose
+
+  if (error instanceof mongoose.Error.ValidationError) {
+
+    return new AppError(
+      'Los datos proporcionados no son válidos.',
+      400,
+      'DATABASE_VALIDATION_ERROR'
+    );
+  }
+
+  // Error nativo
+
   if (error instanceof Error) {
+    console.error(
+      'Error nativo capturado: ',
+      error.message,
+    );
+
     // Error nativo de JavaScript
+
     console.error('Error nativo capturado:', error.message);
-    
+
     return new AppError(
       process.env.NODE_ENV === 'production'
         ? 'Ocurrió un error inesperado en el servidor'
@@ -60,11 +103,12 @@ function handleUnknownError(error: unknown): AppError {
         stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined,
       }
     );
+
   }
 
   // Error desconocido
   console.error('Error desconocido capturado:', error);
-  
+
   return new AppError(
     'Ocurrió un error inesperado en el servidor',
     500,
@@ -94,7 +138,13 @@ function logError(error: AppError, request: any): void {
   );
 }
 
-/**
- * Control de permisos de usuario
- */
+// Error de llave duplicada
+
+export function isDuplicateKeyError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    'code' in error &&
+    error.code === 11000
+  );
+}
 

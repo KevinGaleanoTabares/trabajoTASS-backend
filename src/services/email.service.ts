@@ -3,6 +3,7 @@ import { env } from '../config/env.js';
 import ejs from 'ejs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ExternalServiceError } from '../utils/errors.js';
 
 const transporter = nodemailer.createTransport({
   host: env.mailHost,
@@ -21,50 +22,43 @@ export async function sendVerificationEmail(
   email: string,
   token: string,
 ) {
-  const verificationLink =
-  `${process.env.BASE_URL}/api/auth/verify-email?token=${token}`;// para el back
 
-  const templatePath = path.join(
-    __dirname,
-    '../templates/emails/verify-email.ejs',
-  );
+  try {
 
-  const html = await ejs.renderFile(templatePath, { verificationLink });
+    const verificationLink =
+      `${process.env.BASE_URL}/api/auth/verify-email?token=${token}`;// para el back
 
-  await transporter.sendMail({
-    from: env.mailFrom,
-    to: email,
-    subject: 'Verifica tu cuenta de TASS',
-    html,
-     attachments: [
-    {
-      filename: 'logo-tass.png',
-      path: path.join(
-        __dirname,
-        '../assets/images/logo-tass.png'
-      ),
-      cid: 'tass-logo',
-    },
-  ],
-  });
+    const templatePath = path.join(
+      __dirname,
+      '../templates/emails/verify-email.ejs',
+    );
 
-  // await transporter.sendMail({
-  //   from: env.mailFrom,
-  //   to: email,
-  //   subject: 'Verifica tu cuenta de TASS',
-  //   html: `
-  //     <h2>Bienvenido a TASS</h2>
+    const html = await ejs.renderFile(templatePath, { verificationLink });
 
-  //     <p>Gracias por registrarte.</p>
+    await transporter.sendMail({
+      from: env.mailFrom,
+      to: email,
+      subject: 'Verifica tu cuenta de TASS',
+      html,
+      attachments: [
+        {
+          filename: 'logo-tass.png',
+          path: path.join(
+            __dirname,
+            '../assets/images/logo-tass.png'
+          ),
+          cid: 'tass-logo',
+        },
+      ],
+    });
+  } catch (error: unknown) {
+    console.error('Error enviando correo de verificación: ', error);
 
-  //     <p>Haz clic en el siguiente botón para activar tu cuenta:</p>
+    throw new ExternalServiceError(
+      'Correo',
+      'No fue posible enviar el correo de verificación.'
+    );
+  }
 
-  //     <a href="${verificationLink}"
-  //        style="padding:12px 20px;background:#0456F4;color:white;text-decoration:none;border-radius:6px;">
-  //        Verificar correo
-  //     </a>
 
-  //     <p>Si no solicitaste esta cuenta, puedes ignorar este correo.</p>
-  //   `,
-  // });
 }

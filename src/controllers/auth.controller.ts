@@ -272,4 +272,61 @@ export async function login(request: Request, response: Response, next: NextFunc
   } catch (error) {
     next(error);
   }
+
 }
+
+ export async function changePassword(request: Request, response: Response, next: NextFunction): Promise<void> {
+
+    try {
+
+      const {
+        currentPassword,
+        newPassword,
+      } = request.body;
+
+      if (!currentPassword || !newPassword) {
+
+        throw new ValidationError('La contraseña actual y la nueva contraseña son obligatorias.');
+      }
+
+      const userId = request.user?.id;
+
+      if (!userId) {
+        throw new ValidationError('No fue posible identificar al usuario autenticado.');
+      }
+
+      const user = await UserModel.findById(userId).select('+passwordHash');
+
+      if (!user) {
+        throw new ValidationError('El usuario no existe.');
+      }
+
+      const currentPasswordCorrect = await bcrypt.compare(String(currentPassword), user.passwordHash);
+
+      if (!currentPasswordCorrect) {
+        throw new ValidationError('La contraseña actual es incorrecta.',
+        {
+          currentPassword: 'La contraseña actual es incorrecta.'
+        },
+        'INVALID_CURRENT_PASSWORD',
+      );
+      }
+
+      const passwordHash = await bcrypt.hash(String(newPassword), 10,);
+
+      user.passwordHash = passwordHash;
+
+      await user.save();
+
+      response.status(200).json({
+        success: true,
+        message: 'Contraseña actualizada correctamente.'
+      });
+
+    } catch (error) {
+
+      next(error);
+
+    }
+
+  }

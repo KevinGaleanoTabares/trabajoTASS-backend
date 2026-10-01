@@ -1,6 +1,8 @@
 import type { Request, Response } from 'express';
-import { getConflicts, getConflictById, detectLevelOneConflicts, getDashboardStats } from '../services/conflict.service.js'
+import { getConflicts, getConflictById, detectLevelOneConflicts, getDashboardStats, updateConflictStatus } from '../services/conflict.service.js'
 import mongoose from 'mongoose';
+import { generateConflictPdf } from '../services/conflict-report-PDF.service.js'; 
+import { generateConflictExcel } from '../services/conflict-report-Excel.service.js'; 
 
 // Obtener los conflictos
 export async function getConflictsController(req: Request, res: Response) {
@@ -56,3 +58,81 @@ export async function getDashboardStatsController( req: Request, res: Response) 
         data: stats,
     });
 }
+
+
+// Actualizar estado del conflicto
+
+export async function updateConflictStatusController(request: Request, response: Response) {
+
+    const { id } = request.params;
+    const { estado } = request.body;
+
+    if (typeof id !== 'string' || !mongoose.isValidObjectId(id)) {
+        return response.status(400).json({
+            success: false,
+            message: 'ID de conflicto inválido',
+        });
+    }
+
+    const conflict = await updateConflictStatus(id, estado);
+
+    response.status(200).json({
+        success: true,
+        message: 'Estado del conflicto actualizado correctamente.',
+        data: conflict,
+    });
+
+}
+
+export async function generateConflictReportController(
+  request: Request,
+  response: Response,
+) {
+
+  const { formato } = request.body;
+
+  if (formato === 'pdf') {
+
+    const pdf = await generateConflictPdf();
+
+    response.setHeader(
+      'Content-Type',
+      'application/pdf',
+    );
+
+    response.setHeader(
+      'Content-Disposition',
+      'attachment; filename="reporte-conflictos.pdf"',
+    );
+
+    response.send(pdf);
+
+    return;
+  }
+
+  if (formato === 'excel') {
+
+    const excel = await generateConflictExcel();
+
+    response.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+
+    response.setHeader(
+      'Content-Disposition',
+      'attachment; filename="reporte-conflictos.xlsx"',
+    );
+
+    response.send(excel);
+
+    return;
+  }
+
+  response.status(400).json({
+    success: false,
+    message: 'Formato de reporte no válido.',
+  });
+}
+
+

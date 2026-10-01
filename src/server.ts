@@ -2,10 +2,12 @@ import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 import { cliui } from "@poppinss/cliui";
+import cron from "node-cron";
 
 import { env } from "./config/env.js";
 import index from "./routes/index.routes.js";
 import { errorHandler } from "./middlewares/error.middleware.ts.js";
+import { detectLevelOneConflicts } from "./services/conflict.service.js";
 
 export const app = express();
 
@@ -76,6 +78,21 @@ const startServer = async () => {
         console.error("Servidor no iniciado porque MongoDB no está disponible.");
         process.exit(1);
     }
+
+    cron.schedule(
+        "8 16 * * *",
+        async () => {
+            console.log("[Cron] Iniciando detección diaria de conflictos...");
+
+            try {
+                const conflicts = await detectLevelOneConflicts();
+                console.log(`[Cron] Detección completada: ${conflicts.length} conflicto(s) nuevo(s).`);
+            } catch (error) {
+                console.error("[Cron] Error durante la detección de conflictos:", error);
+            }
+        },
+        { timezone: "America/Bogota" },
+    );
 
     app.listen(
         env.port,

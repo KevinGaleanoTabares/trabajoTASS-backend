@@ -1,10 +1,11 @@
 import { ConflictModel } from '../models/Conflict.js';
-import { ConflictError, NotFoundError } from '../utils/errors.js';
+import { ConflictError, NotFoundError, ValidationError } from '../utils/errors.js';
 import { UserModel } from '../models/User.js';
 import { familyRelationshipModel } from '../models/FamilyRelationship.js';
-import type { ActiveUser, ConflictLevel } from '../utils/enums_types_interfaces.js';
+import type { ActiveUser, ConflictLevel, ConflictStatus } from '../utils/enums_types_interfaces.js';
 import mongoose from 'mongoose';
 import { isDuplicateKeyError } from '../middlewares/error.middleware.ts.js'
+
 
 export async function getConflicts() {
 
@@ -87,21 +88,47 @@ function generateConflictCode(number: number): string {
 }
 
 
-function determineConflictLevel( tipoVinculacionA: string, tipoVinculacionB: string ): ConflictLevel {
+function determineConflictLevel(tipoVinculacionA: string, tipoVinculacionB: string): ConflictLevel {
 
-  const vinculations = new Set([
+  const vinculaciones = new Set([
     tipoVinculacionA,
     tipoVinculacionB,
   ]);
 
-  const hasDirector = vinculations.has('directivo');
-  const hasProvider = vinculations.has('proveedor');
+  // BAJO: empleado ↔ empleado
 
-  if (hasDirector && hasProvider) {
-    return 'MEDIO';
+  if (tipoVinculacionA === 'empleado' && tipoVinculacionB === 'empleado') {
+
+    return 'BAJO';
+
   }
 
-  return 'BAJO';
+  // MEDIO: empleado ↔ proveedor
+
+  if (vinculaciones.has('empleado') && vinculaciones.has('proveedor')) {
+
+    return 'MEDIO';
+
+  }
+
+  // MEDIO: empleado ↔ administrativo
+
+  if (vinculaciones.has('empleado') && vinculaciones.has('proveedor')) {
+
+    return 'MEDIO';
+
+  }
+
+  // MEDIO: empleado ↔ directivo
+
+  if (vinculaciones.has('empleado') && vinculaciones.has('directivo')) {
+
+    return 'MEDIO';
+
+  }
+
+  return 'ALTO';
+
 }
 
 function determineConflictCategory(tipoVinculacion: string): 'EMPLEADO' | 'ADMINISTRATIVO' | 'DIRECTIVO' | 'PROVEEDOR' {
@@ -382,6 +409,7 @@ export async function getDashboardStats() {
       conflictosAltoRiesgo,
       conflictosPendientes,
       conflictosResueltos,
+      pendingConflicts
     ] = await Promise.all([
 
       UserModel.countDocuments({
@@ -402,14 +430,19 @@ export async function getDashboardStats() {
         estado: 'RESUELTO',
       }),
 
+      ConflictModel.find({
+        estado: 'PENDIENTE'
+      }).select('fechaDeteccion').lean(),
+
     ]);
 
+    const tasaBase = totalConflictos > 0 ? (conflictosResueltos / totalConflictos) * 100 : 0;
 
+    const penalizacion = calculatePendingPenalty(pendingConflicts);
 
+    const tasaResolucion = Math.max(0, tasaBase - penalizacion)
 
-
-    const tasaResolucion = totalConflictos > 0 ? (conflictosResueltos / totalConflictos) * 100 : 0;
-
+    const estadoResolucion = tasaResolucion >= 85 ? 'EXCELENTE' : 'DEBES MEJORAR, estás debajo del 85%';
 
     const conflictosConResolucion = await ConflictModel
       .find({
@@ -454,14 +487,11 @@ export async function getDashboardStats() {
       totalConflictos,
       conflictosAltoRiesgo,
       conflictosPendientes,
-
-      tasaResolucion: Number(
-        tasaResolucion.toFixed(2),
-      ),
-
-      tiempoPromedioResolucion: Number(
-        tiempoPromedioResolucion.toFixed(2),
-      ),
+      conflictosResueltos,
+      tasaResolucion: Number(tasaResolucion.toFixed(2)),
+      estadoResolucion,
+      penalizacion: Number(penalizacion.toFixed(2)),
+      tiempoPromedioResolucion: Number(tiempoPromedioResolucion.toFixed(2)),
 
     };
 
@@ -473,4 +503,53 @@ export async function getDashboardStats() {
 
   }
 
+}
+
+function calculatePendingPenalty(pendingConflicts: Array<{ fechaDeteccion: Date}>): number {
+
+  const now = new Date();
+
+  let penalty = 0;
+
+  for (const conflict of pendingConflicts) {
+
+    const differenceMs = now.getTime() - new Date(conflict.fechaDeteccion).getTime();
+
+    const daysPending = Math.floor(differenceMs / (1000 * 60 * 60 * 24));
+
+    if (daysPending > 2) {
+
+      const extraDays = daysPending - 2;
+
+      penalty += extraDays * 3;
+    }
+
+  }
+
+  return penalty;
+
+}
+
+export async function updateConflictStatus(id: string, estado: ConflictStatus) {
+
+  const conflict = await ConflictModel.findById(id);
+
+  if (!conflict) {
+
+    throw new ValidationError('El conflicto no existe.');
+
+  }
+
+  if (conflict.estado === 'RESUELTO') {
+
+    throw new ConflictError('El conflicto ya está resuelto')
+
+  }
+
+  conflict.estado = 'RESUELTO';
+  conflict.fechaResolucion = new Date();
+
+  await conflict.save();
+
+  return conflict;
 }

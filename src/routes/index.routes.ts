@@ -19,3 +19,4 @@ app.use('/api/families', familyRelationshipRoutes);
 app.use('/api/family-relationships', familyRelationshipRoutes);
 
 export default app;
+

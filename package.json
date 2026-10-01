@@ -23,11 +23,14 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "ejs": "^6.0.1",
+    "exceljs": "^4.4.0",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.9.2",
+    "node-cron": "^4.6.0",
     "nodemailer": "^9.0.5",
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "pdfkit": "^0.20.2"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
@@ -37,6 +40,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.2.0",
     "@types/nodemailer": "^8.0.1",
+    "@types/pdfkit": "^0.17.6",
     "cpy-cli": "^7.0.0",
     "cross-env": "^10.1.0",
     "ts-node-dev": "^2.0.0",

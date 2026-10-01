@@ -147,3 +147,16 @@ export type ActiveUser = {
   } | null;
 };
 
+// export interface CreateFamilyRelationshipRequest {
+//   nombres: string;
+//   apellidos: string;
+//   tipoDocumento: TipoDocumento;
+//   numeroDocumento: string;
+//   parentesco: string;
+//   tipoRelacion: string;
+//   cargo: string;
+//   telefono: string;
+//   estado: string;
+//   nombreEmpresa?: string | null;
+//   nitEmpresa?: string | null;
+// }

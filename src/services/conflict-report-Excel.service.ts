@@ -119,7 +119,6 @@ export async function generateConflictExcel(): Promise<Buffer> {
     'Personas involucradas',
     'Investigador asignado',
     'Resolución',
-    'Acción tomada',
   ]);
 
   /*
@@ -197,11 +196,6 @@ export async function generateConflictExcel(): Promise<Buffer> {
       conflict.investigadorAsignado?.nombre
         ?? 'No asignado',
 
-      conflict.resolucion?.descripcion
-        ?? 'No registrada',
-
-      conflict.resolucion?.accionTomada
-        ?? 'No registrada',
     ]);
   }
 
@@ -323,21 +317,11 @@ export async function generateConflictExcel(): Promise<Buffer> {
     conflict => conflict.estado === 'PENDIENTE'
   ).length;
 
-  const investigacion = conflicts.filter(
-    conflict => conflict.estado === 'EN_INVESTIGACION'
-  ).length;
 
   const resueltos = conflicts.filter(
     conflict => conflict.estado === 'RESUELTO'
   ).length;
 
-  const descartados = conflicts.filter(
-    conflict => conflict.estado === 'DESCARTADO'
-  ).length;
-
-  const escalados = conflicts.filter(
-    conflict => conflict.estado === 'ESCALADO'
-  ).length;
 
   const bajo = conflicts.filter(
     conflict => conflict.nivel === 'BAJO'
@@ -363,13 +347,7 @@ export async function generateConflictExcel(): Promise<Buffer> {
 
     ['Conflictos pendientes', pendientes],
 
-    ['En investigación', investigacion],
-
     ['Conflictos resueltos', resueltos],
-
-    ['Conflictos descartados', descartados],
-
-    ['Conflictos escalados', escalados],
 
     ['Riesgo bajo', bajo],
 

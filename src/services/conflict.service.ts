@@ -540,14 +540,22 @@ export async function updateConflictStatus(id: string, estado: ConflictStatus) {
 
   }
 
-  if (conflict.estado === 'RESUELTO') {
+  if (estado === 'RESUELTO' && conflict.estado === 'RESUELTO') {
 
     throw new ConflictError('El conflicto ya está resuelto')
 
   }
 
-  conflict.estado = 'RESUELTO';
-  conflict.fechaResolucion = new Date();
+  if (estado === 'PENDIENTE' && conflict.estado !== 'RESUELTO') {
+    throw new ValidationError('Solo se puede devolver a pendiente un conflicto resuelto.');
+  }
+
+  if (estado !== 'PENDIENTE' && estado !== 'RESUELTO') {
+    throw new ValidationError('El estado solicitado no está permitido para esta acción.');
+  }
+
+  conflict.estado = estado;
+  conflict.fechaResolucion = estado === 'RESUELTO' ? new Date() : null;
 
   await conflict.save();
 

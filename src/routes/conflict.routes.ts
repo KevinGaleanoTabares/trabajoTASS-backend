@@ -14,17 +14,17 @@ import { authorizeRoles } from '../middlewares/role.middleware.js';
 
 const router = Router();
 
-router.get('/', authMiddleware, authorizeRoles('admin', 'super_admin'), getConflictsController);
+router.get('/', authMiddleware, authorizeRoles('admin', 'superAdmin'), getConflictsController);
 
-router.get('/dashboard-stats', authMiddleware, authorizeRoles('admin', 'super_admin'), getDashboardStatsController);
+router.get('/dashboard-stats', authMiddleware, authorizeRoles('admin', 'superAdmin'), getDashboardStatsController);
 
-router.post('/report', authMiddleware, authorizeRoles('admin', 'super_admin'), generateConflictReportController);
+router.post('/report', authMiddleware, authorizeRoles('admin', 'superAdmin'), generateConflictReportController);
 
-router.get('/:id', authMiddleware, authorizeRoles('admin', 'super_admin'), getConflictByIdController);
+router.get('/:id', authMiddleware, authorizeRoles('admin', 'superAdmin'), getConflictByIdController);
 
-router.post('/detect', authMiddleware, authorizeRoles('admin', 'super_admin'), detectConflictsController);
+router.post('/detect', authMiddleware, authorizeRoles('admin', 'superAdmin'), detectConflictsController);
 
-router.put('/:id/status', authMiddleware, authorizeRoles('admin', 'super_admin'), updateConflictStatusController);
+router.put('/:id/status', authMiddleware, authorizeRoles('admin', 'superAdmin'), updateConflictStatusController);
 
 export default router;
 

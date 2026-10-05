@@ -6,11 +6,13 @@ import authorizedPersonRoutes from '../routes/authorized-person.routes.js';
 import conflictRoutes from '../routes/conflict.routes.js';
 import familyDeclarationRoutes from './family-declaration.routes.js';
 import familyRelationshipRoutes from './family-relationship.route.js'
+import adminRoutes from './admin.routes.js';
 
  const app = express();
 
 
 app.use('/api/auth', authRouter);
+app.use('/api/admin', adminRoutes);
 app.use('/api/conflicts', conflictRoutes);
 app.use('/api/authorized-persons', authorizedPersonRoutes);
 app.use('/api/company', companyRouter);

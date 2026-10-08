@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const nodeEnv = process.env.NODE_ENV ?? 'local';
+const nodeEnv = process.env.NODE_ENV ?? 'local'; 
 const envPath = path.resolve(process.cwd(), `.env.${nodeEnv}`);
 
 if (fs.existsSync(envPath)) {

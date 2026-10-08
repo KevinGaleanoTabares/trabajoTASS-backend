@@ -53,6 +53,7 @@ export interface IConflict extends Document {
   fechaDeteccion: Date;
   usuarioDeclarante: mongoose.Types.ObjectId;
   categoria: | 'EMPLEADO' | 'ADMINISTRATIVO' | 'DIRECTIVO' | 'PROVEEDOR';
+  parentesco?: string;
 
   fechaResolucion?: Date | null;
   involucrados: IConflictInvolved[];

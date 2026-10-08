@@ -303,6 +303,8 @@ export async function detectLevelOneConflicts() {
 
         categoria,
 
+        parentesco: relationship.parentesco,
+
         nivel,
 
         estado: 'PENDIENTE',
@@ -346,11 +348,8 @@ export async function detectLevelOneConflicts() {
         ],
 
         descripcion:
-          `Se detectó una relación familiar entre ` +
-          `${usuario.nombres} ${usuario.apellidos} y ` +
-          `${familiar.nombres} ${familiar.apellidos}. ` +
-          `Parentesco registrado: ${relationship.parentesco}. ` +
-          `Se requiere revisión administrativa.`,
+          'Se detectó un posible conflicto de interés por relación familiar. ' +
+          'Se requiere revisión administrativa.',
 
         evidencias: [],
 

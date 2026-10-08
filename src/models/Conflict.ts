@@ -47,6 +47,11 @@ const conflictSchema = new Schema<IConflict>(
       required: true,
     },
 
+    parentesco: {
+      type: String,
+      trim: true,
+    },
+
     fechaResolucion: {
       type: Date,
       default: null,

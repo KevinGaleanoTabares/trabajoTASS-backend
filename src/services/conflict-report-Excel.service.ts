@@ -77,7 +77,7 @@ export async function generateConflictExcel(): Promise<Buffer> {
     'Datos principales'
   );
 
-  worksheet.mergeCells('A1:L1');
+  worksheet.mergeCells('A1:J1');
 
   worksheet.getCell('A1').value =
     'TASS — REPORTE DE CONFLICTOS';
@@ -94,7 +94,7 @@ export async function generateConflictExcel(): Promise<Buffer> {
 
   worksheet.getRow(1).height = 30;
 
-  worksheet.mergeCells('A2:L2');
+  worksheet.mergeCells('A2:J2');
 
   worksheet.getCell('A2').value =
     `Generado el ${formatDate(new Date())}`;
@@ -118,7 +118,6 @@ export async function generateConflictExcel(): Promise<Buffer> {
     'Coincidencias detectadas',
     'Personas involucradas',
     'Investigador asignado',
-    'Resolución',
   ]);
 
   /*
@@ -193,8 +192,7 @@ export async function generateConflictExcel(): Promise<Buffer> {
         conflict.involucrados
       ),
 
-      conflict.investigadorAsignado?.nombre
-        ?? 'No asignado',
+      'Administrador',
 
     ]);
   }
@@ -214,8 +212,6 @@ export async function generateConflictExcel(): Promise<Buffer> {
     { width: 40 },
     { width: 60 },
     { width: 25 },
-    { width: 50 },
-    { width: 35 },
   ];
 
   /*
@@ -271,7 +267,7 @@ export async function generateConflictExcel(): Promise<Buffer> {
 
   worksheet.autoFilter = {
     from: 'A4',
-    to: 'L4',
+    to: 'J4',
   };
 
   /*

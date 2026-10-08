@@ -1,5 +1,6 @@
 import PDFDocument from 'pdfkit';
 import { ConflictModel } from '../models/Conflict.js';
+import type { IConflict } from '../utils/enums_types_interfaces.js';
 import { fileURLToPath } from 'node:url';
 
 function formatDate(date?: Date | null): string {
@@ -42,6 +43,35 @@ function formatoCoincidencias(coincidencias: string[]): string {
     }
 
     return coincidencias.map(item => `• ${item}`).join('\n');
+}
+
+function formatConflictDescription(
+    conflict: Pick<IConflict, 'descripcion' | 'involucrados' | 'usuarioDeclarante' | 'parentesco'>,
+): string {
+    const parentesco = conflict.parentesco
+        ?? conflict.descripcion.match(/Parentesco registrado(?: entre ambos)?:\s*([^.]+)/i)?.[1]?.trim();
+
+    if (!parentesco || conflict.involucrados.length < 2) {
+        return conflict.descripcion || 'No registrada';
+    }
+
+    const declarante = conflict.involucrados.find(
+        persona => String(persona.userId) === String(conflict.usuarioDeclarante),
+    ) ?? conflict.involucrados[0];
+    const personaRelacionada = declarante && conflict.involucrados.find(
+        persona => persona !== declarante,
+    );
+
+    if (!declarante || !personaRelacionada) {
+        return conflict.descripcion || 'No registrada';
+    }
+
+    return [
+        conflict.descripcion,
+        `Persona declarante: ${declarante.nombre} (${declarante.tipoVinculacion}).`,
+        `Familiar registrado por ${declarante.nombre}: ${personaRelacionada.nombre} (${personaRelacionada.tipoVinculacion}).`,
+        `Parentesco: ${personaRelacionada.nombre} es ${parentesco} de ${declarante.nombre}.`,
+    ].join(' ');
 }
 
 function getLevelLabel(nivel: string): string {
@@ -271,7 +301,7 @@ export async function generateConflictPdf(): Promise<Buffer> {
 
             doc.moveDown(0.3);
 
-            doc.fontSize(9).font('Helvetica').text(conflict.descripcion || 'No registrada',
+            doc.fontSize(9).font('Helvetica').text(formatConflictDescription(conflict),
                 {
                     width: 500,
                     lineGap: 3,

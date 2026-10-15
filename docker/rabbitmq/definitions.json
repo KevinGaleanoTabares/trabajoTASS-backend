@@ -1,0 +1,77 @@
+{
+  "users": [
+    {
+      "name": "tass_admin",
+      "password_hash": "${RABBITMQ_ADMIN_PASSWORD_HASH}",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": "administrator"
+    },
+    {
+      "name": "tass_backend",
+      "password_hash": "${RABBITMQ_BACKEND_PASSWORD_HASH}",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": ""
+    }
+  ],
+  "vhosts": [
+    { "name": "/" },
+    { "name": "tass" }
+  ],
+  "permissions": [
+    {
+      "user": "tass_admin",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    },
+    {
+      "user": "tass_backend",
+      "vhost": "tass",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ],
+  "queues": [
+    {
+      "name": "tass.conflict.detection",
+      "vhost": "tass",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-message-ttl": 3600000,
+        "x-max-length": 10000,
+        "x-dead-letter-exchange": "tass.dlx"
+      }
+    },
+    {
+      "name": "tass.email.notification",
+      "vhost": "tass",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-message-ttl": 86400000,
+        "x-max-length": 50000
+      }
+    },
+    {
+      "name": "tass.report.generation",
+      "vhost": "tass",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    }
+  ],
+  "exchanges": [
+    {
+      "name": "tass.dlx",
+      "vhost": "tass",
+      "type": "fanout",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ]
+}

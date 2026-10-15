@@ -7,7 +7,6 @@ export async function getFamilyRelationshipsController(request: Request, respons
         return response.status(401).json({
             success: false,
             message: 'falta información correcta para el usuario',
-            messagew: console.log("falta el id del usuario")
 
         });   
     }

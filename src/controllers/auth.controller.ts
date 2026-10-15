@@ -12,6 +12,7 @@ import { generateAuthToken, generateVerificationToken, verifyToken} from '../ser
 import { sendVerificationEmail } from '../services/email.service.js';
 import { env } from '../config/env.js';
 import { AuthorizedPersonModel } from '../models/AuthorizedPerson.js';
+import { logError } from '../utils/logger.js';
 
 export async function register(
   request: Request,
@@ -94,8 +95,6 @@ export async function register(
 
       if (!authorizedPerson) {
 
-        console.log('El tipo de documento no corresponde a un rol autorizado');
-
         throw new ValidationError(
           'Los datos de autorización no son válidos.',
           {
@@ -120,11 +119,6 @@ export async function register(
 
     const passwordHash = await bcrypt.hash(String(password), 10);
 
-    console.log({
-      tipoVinculacion,
-      empresaProveedora,
-    });
-
     const user = await UserModel.create({
       nombres: String(nombres).trim(),
       apellidos: String(apellidos).trim(),
@@ -139,7 +133,7 @@ export async function register(
       rolSistema: 'usuario',
       estado: 'PENDIENTE',
     }).catch((error) => {
-      console.error('ERROR REAL DE MONGO:', error);
+      logError('auth.registration.database_failure', error);
       throw new DatabaseError(
         'No fue posible crear el usuario.',
         error
@@ -189,8 +183,6 @@ export async function verifyEmail(
       id: string;
       type: string;
     };
-
-    console.log(payload);
 
     if (payload.type !== 'verify-email') {
       response.status(400).send('Token inválido');

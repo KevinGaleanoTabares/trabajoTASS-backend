@@ -6,8 +6,10 @@ import cron from "node-cron";
 
 import { env } from "./config/env.js";
 import index from "./routes/index.routes.js";
+import { healthRouter } from "./routes/health.routes.js";
 import { errorHandler } from "./middlewares/error.middleware.ts.js";
 import { detectLevelOneConflicts } from "./services/conflict.service.js";
+import { logError, logInfo } from "./utils/logger.js";
 
 export const app = express();
 
@@ -32,6 +34,7 @@ app.use(
 // Routes
 // ─────────────────────────────────────────────
 
+app.use("/health", healthRouter);
 app.use(index);
 
 // ─────────────────────────────────────────────
@@ -47,21 +50,16 @@ app.use(errorHandler);
 const connectDB = async () => {
     try {
         await mongoose.connect(env.mongoUri);
-
         sticker
             .add("Base de datos Online")
             .render();
-
+        logInfo("database.connected");
         return true;
-
     } catch (error) {
-
         sticker
             .add("Base de datos Offline")
             .render();
-
-        console.error("Error al conectar con MongoDB:", error);
-
+        logError("database.connection.failed", error);
         return false;
     }
 };
@@ -75,7 +73,7 @@ const startServer = async () => {
     const databaseConnected = await connectDB();
 
     if (!databaseConnected) {
-        console.error("Servidor no iniciado porque MongoDB no está disponible.");
+        logError("server.start.aborted", new Error("MongoDB unavailable"));
         process.exit(1);
     }
 
@@ -86,13 +84,15 @@ const startServer = async () => {
     cron.schedule(
         "8 16 * * *",
         async () => {
-            console.log("[Cron] Iniciando detección diaria de conflictos...");
+            logInfo("cron.conflict_detection.started");
 
             try {
                 const conflicts = await detectLevelOneConflicts();
-                console.log(`[Cron] Detección completada: ${conflicts.length} conflicto(s) nuevo(s).`);
+                logInfo("cron.conflict_detection.completed", {
+                    newConflicts: conflicts.length,
+                });
             } catch (error) {
-                console.error("[Cron] Error durante la detección de conflictos:", error);
+                logError("cron.conflict_detection.failed", error);
             }
         },
         { timezone: "America/Bogota" },
@@ -116,6 +116,10 @@ const startServer = async () => {
                     )}`
                 )
                 .render();
+            logInfo("server.http.started", {
+                port: env.port,
+                environment: env.nodeEnv,
+            });
         }
     );
 };

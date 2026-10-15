@@ -2,6 +2,7 @@ import { FamilyDeclarationModel } from "../models/FamilyDeclaration.js";
 import { UserModel } from '../models/User.js'
 import { ValidationError, ConflictError } from "../utils/errors.js";
 import type { TipoVinculo, TipoDocumento } from "../utils/enums_types_interfaces.js";
+import { logError } from '../utils/logger.js';
 
 export async function createFamilyDeclaration(
     declaranteId: string,
@@ -63,7 +64,7 @@ export async function createFamilyDeclaration(
         return declaracion;
 
     } catch (error: unknown) {
-        console.error('Error creando declaración familiar:', error);
+        logError('family_declaration.creation.failed', error);
 
         throw error;
     }

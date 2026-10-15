@@ -85,9 +85,6 @@ export function validateConfirmPassword(password: string, confirmPassword: strin
     return { valid: false, error: 'La confirmación de la contraseña es requerida.' };
   }
  
-  console.log("confirmar contraseña", confirmPassword)
-  console.log("confirmar contraseña", password)
-
   if (password !== confirmPassword) {
     return { valid: false, error: 'Las contraseñas no coinciden.' };
   }
@@ -185,15 +182,6 @@ export function validateRegistration(data: {
 
   const confirmPasswordValidation = validateConfirmPassword(String(data.password ?? ''), String(data.confirmPassword ?? ''));
   if (!confirmPasswordValidation.valid) errors.confirmPassword = confirmPasswordValidation.error || '';
-
-  console.log("Nombres:", data.nombres)
-  console.log("Apellidos:", data.apellidos)
-  console.log("tipo de Documento:", data.tipoDocumento)
-  console.log("numeroDocumento:", data.numeroDocumento)
-  console.log("correo:", data.correo)
-  console.log("telefono:", data.telefono)
-  console.log("tipoVinculacion:", data.tipoVinculacion)
-  console.log("empresaProveedora:", data.empresaProveedora)
 
   return {
     valid: Object.keys(errors).length === 0,

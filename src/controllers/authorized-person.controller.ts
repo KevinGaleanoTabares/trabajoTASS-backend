@@ -5,6 +5,7 @@ import {
     ConflictError,
     DatabaseError,
 } from '../utils/errors.js';
+import { logError } from '../utils/logger.js';
 
 export async function createAuthorizedPerson(
     request: Request,
@@ -66,7 +67,7 @@ export async function createAuthorizedPerson(
             cargo: String(cargo).trim(),
             estado: estado ?? 'ACTIVO',
         }).catch((error) => {
-            console.error('EROR REAL DE MONGO:', error);
+            logError('authorized_person.creation.database_failure', error);
 
             throw new DatabaseError(
                 'No fue posible crear la persona autorizada',

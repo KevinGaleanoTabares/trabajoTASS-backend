@@ -2,6 +2,7 @@ import { familyRelationshipModel } from "../models/FamilyRelationship.js";
 import { UserModel } from '../models/User.js';
 import { ValidationError, ConflictError } from "../utils/errors.js";
 import type{ TipoDocumento } from '../utils/enums_types_interfaces.js'
+import { logError } from '../utils/logger.js';
 
 export async function getFamilyRelationships(userId: string) {
 
@@ -15,7 +16,7 @@ export async function getFamilyRelationships(userId: string) {
             'nombres apellidos tipoDocumento numeroDocumento telefono tipoVinculacion rolSistema cargo estado',
         ).lean()
     } catch (error: unknown) {
-        console.error('Error obteniendo relaciones familiares: ', error);
+        logError('family_relationship.list.failed', error);
         throw error;
     }
 
@@ -72,10 +73,9 @@ export async function createFamilyRelationship(userId: string, data: { tipoDocum
         });
 
     } catch (error: unknown) {
-        console.error('Error creando realción familiar', error);
+        logError('family_relationship.creation.failed', error);
         throw error;
     }
 
 }
-
 

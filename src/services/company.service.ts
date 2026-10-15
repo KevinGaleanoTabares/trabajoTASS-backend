@@ -1,4 +1,5 @@
 import { CompanyModel } from '../models/company.js';
+import { logError } from '../utils/logger.js';
 
 export const findCompanyByNit = async (nit: string) => {
     try {
@@ -10,7 +11,7 @@ export const findCompanyByNit = async (nit: string) => {
 
     } catch (error: unknown) {
         
-        console.error('Error buscando empresa por NIT: ', error);
+        logError('company.lookup.failed', error);
         throw error
     }
 

@@ -30,8 +30,6 @@ export function authMiddleware(
 
     const payload = verifyToken(token) as JwtPayload;
 
-    console.log('USUARIO AUTENTICADO:', payload)
-
     request.user = payload;
 
     next();

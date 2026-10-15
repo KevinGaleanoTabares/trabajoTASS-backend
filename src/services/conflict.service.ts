@@ -5,6 +5,7 @@ import { familyRelationshipModel } from '../models/FamilyRelationship.js';
 import type { ActiveUser, ConflictLevel, ConflictStatus } from '../utils/enums_types_interfaces.js';
 import mongoose from 'mongoose';
 import { isDuplicateKeyError } from '../middlewares/error.middleware.ts.js'
+import { logError } from '../utils/logger.js';
 
 
 export async function getConflicts() {
@@ -13,13 +14,11 @@ export async function getConflicts() {
 
     const conflicts = await ConflictModel.find().sort({ fechaDeteccion: -1 }).lean();
 
-    console.log('FAMILY CONFLICTS GOTTEN', conflicts);
-
     return conflicts;
 
   } catch (error: unknown) {
 
-    console.error('Error obteniendo conflictos:', error);
+    logError('conflict.list.failed', error);
 
     throw error;
   }
@@ -39,7 +38,7 @@ export async function getConflictById(id: string) {
 
   } catch (error: unknown) {
 
-    console.error('Error obteniendo conflicto: ', error);
+    logError('conflict.lookup.failed', error);
 
     throw error;
   }
@@ -174,7 +173,7 @@ async function conflictAlreadyExists(usuarioDeclaranteId: string, FamiliarId: st
 
   } catch (error: unknown) {
 
-    console.error('Error verificando si el conflicto ya existe: ', error);
+    logError('conflict.duplicate_check.failed', error);
 
     throw error;
   }
@@ -358,9 +357,6 @@ export async function detectLevelOneConflicts() {
         auditLog: [],
 
       };
-      console.log('RESULTADO', conflict)
-
-
       // 17. Agregar el conflicto al arreglo
       detectedConflicts.push(conflict);
 
@@ -383,7 +379,7 @@ export async function detectLevelOneConflicts() {
     return savedConflicts;
 
   } catch (error: unknown) {
-    console.error('Error detectando conflictos:', error);
+    logError('conflict.detection.failed', error);
 
     if (isDuplicateKeyError(error)) {
       throw new ConflictError(
@@ -496,7 +492,7 @@ export async function getDashboardStats() {
 
   } catch (error: unknown) {
 
-    console.error('Error obteniendo estadísticas del dashboard: ', error);
+    logError('conflict.dashboard_stats.failed', error);
     
     throw error;
 

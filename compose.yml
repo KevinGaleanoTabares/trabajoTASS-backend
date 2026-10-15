@@ -1,35 +1,150 @@
 services:
-
-  server-desarrollo:
-    profiles: ["desarrollo"]
-
-    build:
-      context: .
-      dockerfile: Dockerfile
-
+  backend:
+    build: .
+    env_file:
+      - .env.dev
     environment:
-      NODE_ENV: dev
-      PORT: ${PORT}
+      PORT: 3000
       MONGO_URI: ${MONGO_URI}
-
-    container_name: trabajotassbackend
-
+      FRONTEND_URL: http://localhost:11001
+      JWT_SECRET: dev-secret,
+      NODE_ENV: dev
+      MAIL_HOST: sandbox.smtp.mailtrap.io
+      MAIL_PORT: 2525
+      MAIL_USER: 2cd4d052a92d7a
+      MAIL_PASS: 447a711011d486
+      MAIL_FROM: pruebasTASS@tass.local
+      BASE_URL: http://localhost:3000
     ports:
       - "3000:3000"
-
+    expose:
+      - "3000"
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
+    networks:
+      - tass-network
+    cpus: 0.25
+    mem_limit: 128m
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://backend:' + process.env.PORT + '/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   mongodb:
-    image: mongo:8
-
-    container_name: trabajotassmongo
-
+    build:
+      context: ./docker/mongodb
+      dockerfile: Dockerfile
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: tass
+      MONGO_INITDB_ROOT_PASSWORD: tass
     ports:
       - "27017:27017"
-
+    expose:
+      - "27017"
     volumes:
       - mongodb_data:/data/db
+    networks:
+      tass-network:
+        aliases:
+          - mongo-practi
+    cpus: 0.25
+    mem_limit: 453m
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'mongosh --quiet --username "$$MONGO_INITDB_ROOT_USERNAME" --password "$$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --eval "quit(db.adminCommand({ ping: 1 }).ok === 1 ? 0 : 1)"'
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
+  redis:
+    build:
+      context: ./docker/redis
+      dockerfile: Dockerfile
+    command:
+      - redis-server
+      - /usr/local/etc/redis/redis.conf
+      - --maxmemory
+      - ${REDIS_MAXMEMORY:-128mb}
+      - --maxmemory-policy
+      - ${REDIS_MAXMEMORY_POLICY:-allkeys-lru}
+    expose:
+      - "6379"
+    networks:
+      - tass-network
+    healthcheck:
+      test:
+        - CMD
+        - redis-cli
+        - ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    build:
+      context: ./docker/rabbitmq
+      dockerfile: Dockerfile
+    environment:
+      RABBITMQ_ADMIN_PASSWORD: ${RABBITMQ_ADMIN_PASSWORD:?Define RABBITMQ_ADMIN_PASSWORD}
+      RABBITMQ_BACKEND_PASSWORD: ${RABBITMQ_BACKEND_PASSWORD:?Define RABBITMQ_BACKEND_PASSWORD}
+    expose:
+      - "5672"
+      - "15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - tass-network
+    healthcheck:
+      test:
+        - CMD
+        - rabbitmq-diagnostics
+        - -q
+        - check_running
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  frontend:
+    build:
+      context: ./../trabajoTASSfrontend
+      dockerfile: Dockerfile
+      args:
+        FRONTEND_ENV: ${FRONTEND_ENV:-production}
+    ports:
+      - "${FRONTEND_HOST_PORT:-11001}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - tass-network
+    cpus: 0.5
+    mem_limit: 453m
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -q -O /dev/null http://frontend/ || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+# La red compartida permite resolver los servicios por su nombre DNS de Compose.
+networks:
+  tass-network:
+    name: tass-network
+    driver: bridge
+
+# Los datos se conservan al recrear los contenedores.
 volumes:
   mongodb_data:
+  rabbitmq_data:

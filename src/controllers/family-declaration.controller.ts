@@ -40,7 +40,6 @@ export async function createFamilyDeclarationController(
             message: 'Familiar registrado correctamente.',
             data: declaracion,
         });
-        console.log('FAMILIAR CREADO', declaracion )
 
     } catch (error) {
         next(error);

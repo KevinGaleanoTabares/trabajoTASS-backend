@@ -4,6 +4,7 @@ import ejs from 'ejs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ExternalServiceError } from '../utils/errors.js';
+import { logError } from '../utils/logger.js';
 
 const transporter = nodemailer.createTransport({
   host: env.mailHost,
@@ -52,7 +53,7 @@ export async function sendVerificationEmail(
       ],
     });
   } catch (error: unknown) {
-    console.error('Error enviando correo de verificación: ', error);
+    logError('email.verification.send_failed', error);
 
     throw new ExternalServiceError(
       'Correo',
